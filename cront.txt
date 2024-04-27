@@ -1,0 +1,1 @@
+*/1 * * * *  /home/computacion/Documents/compu/sesion17/introIce/deploy.sh
