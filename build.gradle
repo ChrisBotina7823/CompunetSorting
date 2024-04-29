@@ -24,7 +24,7 @@ subprojects {
     //
     slice {
         java {
-            files = [file("../Printer.ice")]
+            files = [file("../Sorter.ice")]
         }
     }
  

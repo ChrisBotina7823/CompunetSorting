@@ -8,5 +8,6 @@
  */
 
 rootProject.name = 'CompunetSorting'
-include "client"
-include "server"
+include "worker"
+include "master"
+include "common"
