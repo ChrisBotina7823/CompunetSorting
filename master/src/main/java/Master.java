@@ -23,6 +23,7 @@ public class Master {
     public static final int BLOCK_SIZE = 100;
 
     public static void main(String[] args) throws InterruptedException, IOException {
+
         try(Communicator communicator = Util.initialize(args)) {
             List<WorkerIPrx> workers = new ArrayList<>();
             Scanner scanner = new Scanner(System.in);

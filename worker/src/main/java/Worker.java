@@ -32,6 +32,4 @@ public class Worker implements WorkerI {
             communicator.waitForShutdown();
         }
     }
-
-    
 }
