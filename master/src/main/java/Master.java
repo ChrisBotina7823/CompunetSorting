@@ -129,6 +129,10 @@ public class Master {
                         line2 = reader2.readLine();
                     }
                 }
+                reader1.close();
+                reader2.close();
+                Files.deleteIfExists(Paths.get(file1));
+                Files.deleteIfExists(Paths.get(file2));    
             } catch (IOException e) {
                 e.printStackTrace();
             }
