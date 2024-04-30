@@ -49,8 +49,7 @@ public class Master {
                 AtomicInteger sortingFilesCount = new AtomicInteger(0);
                 while((task = br.readLine()) != null) {
                     taskGroup.add(task);
-                    // If the task group has 10 tasks, send it to a worker
-                    if(taskGroup.size() == BLOCK_SIZE) {
+                    if(taskGroup.size() == BLOCK_SIZE || !br.ready()) { // Send the group if it's full or it's the last one
                         while(availableWorkers.isEmpty()) {
                             // Wait until a worker is available
                             Thread.sleep(1000);
@@ -82,76 +81,65 @@ public class Master {
                 while(sortingFilesCount.get() > 0) {
                     Thread.sleep(1000);
                 }
-                                
+
                 System.out.println("Tasks have been distributed to workers. Waiting for workers to finish...");
-            
+
                 System.out.println("Local Sorting completed.");
-                
+
                 // Merge files
-                Queue<String> fileQueue = new LinkedList<>();
-                for(int i = 0; i < fileIndex; i++) {
-                    fileQueue.add("resources/temp" + i + ".txt");
+                try {
+                    mergeFiles(fileIndex);
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-                
-                while(fileQueue.size() > 1) {
-                    
-                    String file1 = fileQueue.poll();
-                    String file2 = fileQueue.poll();
-                    String newFile = "resources/temp" + fileIndex + ".txt";
+            }
+        }
+    }
 
-                    System.out.println("merging " + file1 + " and " + file2 + " into " + newFile);
-                
-                    // Wait for an available worker
-                    while(availableWorkers.isEmpty()) {
-                        Thread.sleep(1000);
-                    }
-                
-                    WorkerIPrx worker = availableWorkers.poll(); // Get the next available worker
+    private static void mergeFiles(int fileIndex) throws IOException {
+        Queue<String> fileQueue = new LinkedList<>();
+        for(int i = 0; i < fileIndex; i++) {
+            fileQueue.add("resources/temp" + i + ".txt");
+        }
 
-                    worker.mergeFilesAsync(file1, file2, newFile).thenAccept(result -> {
-                        availableWorkers.add(worker); // Add the worker back to the queue
-                        fileQueue.add(newFile); // Add the merged file back to the queue
-                    });
-                
-                    fileIndex++;
-                }
-                if(fileQueue.size() == 1) {
-                    String file1 = fileQueue.poll();
-                    String file2 = "resources/temp" + (fileIndex - 1) + ".txt";
-                    String newFile = "resources/temp" + fileIndex + ".txt";
-                
-                    System.out.println("merging " + file1 + " and " + file2 + " into " + newFile);
-                
-                    // Wait for an available worker
-                    while(availableWorkers.isEmpty()) {
-                        Thread.sleep(1000);
-                    }
-                
-                    WorkerIPrx worker = availableWorkers.poll(); // Get the next available worker
-                
-                    worker.mergeFilesAsync(file1, file2, newFile).thenAccept(result -> {
-                        availableWorkers.add(worker); // Add the worker back to the queue
-                        fileQueue.add(newFile); // Add the merged file back to the queue
-                    });                
-                }
+        while(fileQueue.size() > 1) {
+            String file1 = fileQueue.poll();
+            String file2 = fileQueue.poll();
+            String newFile = "resources/temp" + fileIndex + ".txt";
 
-                for(int i=0; i<fileIndex; i++) {
-                    Path tempFilePath = Paths.get("resources/temp" + i + ".txt");
-                    try {
-                        Files.deleteIfExists(tempFilePath);
-                    } catch(IOException e) {
-                        System.out.println("Error deleting file: " + tempFilePath);
+            System.out.println("Merging " + file1 + " and " + file2 + " into " + newFile);
+
+            try (
+                    BufferedReader reader1 = new BufferedReader(new FileReader(file1));
+                    BufferedReader reader2 = new BufferedReader(new FileReader(file2));
+                    BufferedWriter writer = new BufferedWriter(new FileWriter(newFile))
+            ) {
+                String line1 = reader1.readLine();
+                String line2 = reader2.readLine();
+
+                while (line1 != null || line2 != null) {
+                    if (line1 != null && (line2 == null || line1.compareTo(line2) <= 0)) {
+                        writer.write(line1);
+                        writer.newLine();
+                        line1 = reader1.readLine();
+                    } else {
+                        writer.write(line2);
+                        writer.newLine();
+                        line2 = reader2.readLine();
                     }
                 }
-
-                Path sourcePath = Paths.get("resources/temp" + fileIndex + ".txt");
-                Path targetPath = Paths.get("resources/final.txt");
-                Files.move(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
-                
-            } catch(IOException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
 
+            fileQueue.add(newFile);
+            fileIndex++;
+        }
+
+        if(fileQueue.size() == 1) {
+            Path tempFilePath = Paths.get(fileQueue.poll());
+            Path targetPath = Paths.get("resources/final.txt");
+            Files.move(tempFilePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 }
