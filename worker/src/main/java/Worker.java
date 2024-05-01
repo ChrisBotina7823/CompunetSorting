@@ -23,13 +23,21 @@ public class Worker implements WorkerI {
 
     public static void main(String[] args) {
         try(Communicator communicator = Util.initialize(args)) {
-            ObjectAdapter adapter = communicator.createObjectAdapterWithEndpoints("WorkerIAdapter", "default -p 500");
+            // Crear un ObjectAdapter para cada worker con un puerto único
+            System.out.println("Ingrese el nombre del worker:");
             Scanner scanner = new Scanner(System.in);
-            System.out.println("Enter worker name:");
             String workerName = scanner.nextLine();
+            System.out.println("Ingrese el número de puerto para este worker:");
+            int portNumber = scanner.nextInt();
+            ObjectAdapter adapter = communicator.createObjectAdapterWithEndpoints(workerName + "Adapter", "default -p " + portNumber);
+
+            // Agregar el worker al adaptador y activarlo
             ObjectPrx obj = adapter.add(new Worker(), Util.stringToIdentity(workerName));
             adapter.activate();
+
+            // Esperar a que el comunicador se cierre
             communicator.waitForShutdown();
         }
     }
+
 }

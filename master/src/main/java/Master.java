@@ -28,16 +28,23 @@ public class Master {
             List<WorkerIPrx> workers = new ArrayList<>();
             Scanner scanner = new Scanner(System.in);
             String workerName;
+            String port;
 
             while (true) {
-                System.out.println("Enter worker names. Type 'start' to begin sorting:");
-                if((workerName = scanner.nextLine()).equals("start")) break;
-                ObjectPrx base = communicator.stringToProxy(workerName + ":default -p 500");
+                System.out.println("Ingrese nombres de workers. Escriba 'start' para comenzar a ordenar:");
+                workerName = scanner.nextLine();
+
+                if (workerName.equals("start")) break;
+                System.out.println("Ingrese el puerto del worker:");
+                port = scanner.nextLine();
+                // Asignar un puerto único a cada worker
+                ObjectPrx base = communicator.stringToProxy(workerName + ":default -p " + port);
                 WorkerIPrx worker = WorkerIPrx.checkedCast(base);
-                if(worker == null) {
-                    throw new Error("Invalid proxy");
+                if (worker == null) {
+                    throw new Error("Proxy inválido");
                 }
                 workers.add(worker);
+
             }
 
             // Open the txt file
